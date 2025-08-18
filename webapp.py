@@ -1,18 +1,18 @@
 import streamlit as st
 import BackEnd as BE
-import constants as C
 import pandas as pd
-import utils as utils
+import seaborn as sns
 from streamlit_extras.stylable_container import stylable_container
+import constants as C
+import utils as utils
 from datetime import datetime
 
 now = datetime.now().strftime("%Y%m%d")
 
 label = C.label
-label = ["Magio", "Re Perek", "Gazza", "Nando", "Baffo", "Carra", "Aure", "Titti", "Cina", "Dario"]
 
-directory = "/users/fernando.monaco/desktop/Varie/Briscolaccia/"
-directory_ark = directory + "/Archivio/"
+directory = C.directory
+directory_ark = C.directory_ark
 path_save = directory_ark + "Partita" + now + ".csv"
 
 exogenous_features = ['Punteggio']
@@ -32,7 +32,7 @@ def main():
     # App settings
     title = "Ammazzalorso"
     # set a proper title
-    st.header('La Briscolaccia dei Brenesi')
+    st.title('La Briscolaccia dei Brenesi')
     st.header('Webapp per archiviare risultati delle partite e mantenere uno storico')
     st.header('')
     tab1, tab2, tab3 = st.tabs(["Carica Risultato", "📈 Storico", "Analisi giocatori"])
@@ -92,7 +92,6 @@ def main():
                 #print(partita, player)
             else:
                 # Create buttons with st.button
-                #print(partita, player, conta)
                 with stylable_container(
                         "green",
                         css_styles="""
@@ -120,49 +119,68 @@ def main():
                         utils.save_partita(df, path_save)
                         st.write('Partita caricata!')
 
-    # for i in label:
-    #     st.checkbox(i, value=False, key=None, help=None, on_change=None, args=None, kwargs=None, *, disabled=False,
-    #             label_visibility="visible", width="content")
-    #     if check_boxes:
-    #         st.write(i)
-    # if question != "":
-    #     risposta = be_app.gpt3(question)
-    #     st.write(risposta[0])
-    #     now = datetime.now().strftime("%Y%m%d %H:%M:%S")
-    #     utils.salva_q(question, risposta[1], risposta[2], now)
+    with tab2:
+        def click_button():
+            st.session_state.clicked = True
 
-    #utils.add_bg_from_local(directory+"Area591_logo.png")
+        if 'clicked' not in st.session_state:
+            st.session_state.clicked = False
 
+        st.button("Aggiorna i risultati", icon="🔥", key="button2", on_click=click_button)
+        if st.session_state.clicked:
+            #Lancia il backend
+            BE.aggiorna()
+
+        s = directory + "Briscolaccia_Sombreno_25.csv"
+        csv = pd.read_csv(s, sep=";", header=0, index_col=False)
+        master = pd.DataFrame(csv)
+        master['Data'] = pd.to_datetime(master['Data'], format='%Y%m%d')
+
+        maxPu = master['Progress_match'].max()
+        st.write(":blue[Numero di partite giocate da settembre 2025: ]", maxPu)
+
+        groupby = master.groupby(['Giocatori'])
+        out = pd.DataFrame({'PunteggioTotale': groupby['Punteggio'].sum(), })
+        out.sort_values(by=["PunteggioTotale"], ascending=True)
+
+        st.subheader(':rainbow[Classifica dei punti cumulati finora] :sunglasses:')
+        st.bar_chart(data=out)
+
+        groupby = master.groupby(['Giocatori'])
+        out = pd.DataFrame({'TOT_Win': groupby['Winner'].sum(), })
+        out.sort_values(by=["TOT_Win"], ascending=False)
+
+        st.subheader(':green[Chi ha vinto più partite?]')
+        st.bar_chart(data=out, color="#1b4d3e")
+
+        groupby = master.groupby(['Giocatori'])
+        out = pd.DataFrame({'TOT_Los': groupby['Loser'].sum(), })
+        out.sort_values(by=["TOT_Los"], ascending=True)
+
+        st.subheader(':red[Chi ha perso più partite?]')
+        st.bar_chart(data=out, color=["#fe6f5e"])
+
+        groupby = master.groupby(['Giocatori'])
+        out = pd.DataFrame({'Numero partite': groupby['Giocatori'].count(), })
+        out.sort_values(by=["Numero partite"], ascending=True)
+
+        st.subheader(":blue[Chi ha giocato più partite?]")
+        st.bar_chart(data=out, color="#0d98ba")
+
+    with tab3:
+        player= st.selectbox('Scegli il giocatore', options=label)
+
+        s = directory + "Briscolaccia_Sombreno_25.csv"
+        csv = pd.read_csv(s, sep=";", header=0, index_col=False)
+        master = pd.DataFrame(csv)
+        master['Data'] = pd.to_datetime(master['Data'], format='%Y%m%d')
+        out = master.loc[master['Giocatori'] == player]
+
+        out['Cumulati'] = master.groupby(['Giocatori'])['Punteggio'].cumsum()
+        #master = master.rename(columns={'Data': 'index'}).set_index('index')
+
+        st.subheader(":rainbow[Quale è il percorso del nostro eroe?]")
+        master.Progress_match: int = 0
+        st.line_chart(out, x="Progress_match", y="Cumulati", x_label="Partite", y_label="Andamento punti cumulati")
+        #st.bar_chart(data=out, color="#ffc1cc")
 main()
-
-# #  define our sidebar title
-# st.sidebar.title("Menu")
-# #  define our sidebar subtitle
-# st.sidebar.subheader("Select feature")
-#
-# max_rows = st.slider(
-#     "Number of observation to show",
-#     min_value=2000,
-#     max_value=47660,  # should be set automatically
-#     value=2000,
-#     step=1000,
-# )
-#
-# # our dataset
-# df = load_data(max_rows)
-#
-# # show to the user how many records are loaded
-# st.write("Records shown: ", df.shape[0])
-#
-# # get a list of all numeric columns
-# numeric_columns = df.select_dtypes(exclude=object).columns.values
-#
-# # create a feature picker
-# feature = st.sidebar.selectbox(
-#     "Click below to select a new feature",
-#     numeric_columns
-# )
-#
-# # Canvas
-# sns.distplot(df[feature])
-# st.pyplot()
