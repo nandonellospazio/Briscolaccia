@@ -8,13 +8,13 @@ import streamlit as st
 import openpyxl
 #import anthropic
 import pickle
-import tiktoken
-from sklearn.neighbors import NearestNeighbors
-from joblib import dump, load
+#import tiktoken
+#from sklearn.neighbors import NearestNeighbors
+#from joblib import dump, load
 #from transformers import GPT2TokenizerFast
-from scipy.spatial import distance_matrix
+#from scipy.spatial import distance_matrix
 #from sentence_transformers import SentenceTransformer
-from nltk.cluster.util import cosine_distance
+#from nltk.cluster.util import cosine_distance
 import constants as C
 from openpyxl import Workbook
 wb = Workbook()

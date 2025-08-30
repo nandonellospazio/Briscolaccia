@@ -5,11 +5,14 @@ import seaborn as sns
 from streamlit_extras.stylable_container import stylable_container
 import constants as C
 import utils as utils
+from login_page import login
+from PIL import Image
 from datetime import datetime
 
 now = datetime.now().strftime("%Y%m%d")
 
 label = C.label
+logo = C.logo
 
 directory = C.directory
 directory_ark = C.directory_ark
@@ -21,166 +24,25 @@ predict_size = 5
 cols = st.columns(len(exogenous_features))
 lists = []
 
-# @st.cache
-# def load_data(n_rows=1000):
-#     time.sleep(4)  # make our function super slow
-#
-#     dataframe = pd.read_csv(file, nrows=n_rows)
-#     return dataframe
-
 def main():
     # App settings
     title = "Ammazzalorso"
     # set a proper title
+    image = Image.open(logo)
+    st.image(image)
     st.title('La Briscolaccia dei Brenesi')
-    st.header('Webapp per archiviare risultati delle partite e mantenere uno storico')
+    st.subheader('Webapp per archiviare i risultati e le statistiche delle partite')
     st.header('')
-    tab1, tab2, tab3 = st.tabs(["Carica Risultato", "📈 Storico", "Analisi giocatori"])
-    contaz = 0
 
-    with tab1:
-        player= st.multiselect('Inserisci i giocatori dalla seguente lista', options=label)
-        contaz = len(player)
-        if contaz > 5:
-            st.text("Ci sono troppi giocatori, ricontrolla")
-        elif contaz < 5:
-            delta = 5-contaz
-            testo = "Aggiungi altri", delta, "giocatori"
-            st.text(testo)
-        else:
-            st.write("I giocatori sono: ", player)
+    pages = {
+        "Cosa puoi fare su Briscolaccia": [
+            st.Page("page1.py", title="Caricare una nuova partita"),
+            st.Page("page2.py", title="Vedere le statistiche generali"),
+            st.Page("page3.py", title="Focus su singolo giocatore")
+        ],
+    }
 
-            #Caricare i punteggio giocatore per giocatore
-            st.text("Inserisci il punteggio finale per ciascun giocatore")
-            somma = 0
-            j = 0
+    pg = st.navigation(pages)
+    pg.run()
 
-            for p in range(len(exogenous_features)):
-                lists.append([])
-
-            for i in enumerate(cols):
-                for h in player:
-                    key = f"number_input_{i}_{h}"
-                    # a = st.number_input(exogenous_features[i], key=key)
-                    conta = st.number_input(h, min_value=-20, max_value=20, step=1, value=0,
-                                            key=key)
-                    lists[0].append(conta)
-
-                    # z = list(player)
-                    # lists.index(z)
-                    # d = "giocatore"
-                    # e = "punteggio"
-
-                    if conta > 10:
-                        st.text("Che punteggi roboanti. Sei sicuro del punteggio?")
-                    elif conta < -10:
-                        verifica = "Che disastro per", i, ". Sei sicuro del punteggio?"
-                        st.text(verifica)
-                    j = j + 1
-                    somma = somma + conta
-
-
-                #d=(d, i)
-                #e=(e, conta)
-                #partita = partita.insert(-1,str(player))
-                #partita = partita.insert(-1, conta)
-                #data2 = {"giocatore": [player], "punteggio": [conta], "data": [now]}
-                #data2 = pd.DataFrame(data2)
-                #nuova_partita = nuova_partita.append(data2)
-            if somma != 0:
-                st.text("C'è qualcosa che non va nella somma dei punteggi")
-                #print(partita, player)
-            else:
-                # Create buttons with st.button
-                with stylable_container(
-                        "green",
-                        css_styles="""
-                    button {
-                        background-color: #00FF00;
-                        color: black;
-                    }""",
-                ):
-                    if 'clicked' not in st.session_state:
-                        st.session_state.clicked = False
-
-                    def click_button():
-                        st.session_state.clicked = True
-
-                    carica = st.button("Salva il risultato", icon="🔥", key="button1", on_click=click_button)
-
-                    if st.session_state.clicked:
-                        # The message and nested widget will remain on the page
-                        df = pd.DataFrame(lists)
-                        df = df.transpose()
-                        df.columns = exogenous_features
-                        #df.set_index(list(player))
-                        df.insert(0, "Giocatori",player)
-                        df.insert(0, "Data", now)
-                        utils.save_partita(df, path_save)
-                        st.write('Partita caricata!')
-
-    with tab2:
-        def click_button():
-            st.session_state.clicked = True
-
-        if 'clicked' not in st.session_state:
-            st.session_state.clicked = False
-
-        st.button("Aggiorna i risultati", icon="🔥", key="button2", on_click=click_button)
-        if st.session_state.clicked:
-            #Lancia il backend
-            BE.aggiorna()
-
-        s = directory + "Briscolaccia_Sombreno_25.csv"
-        csv = pd.read_csv(s, sep=";", header=0, index_col=False)
-        master = pd.DataFrame(csv)
-        master['Data'] = pd.to_datetime(master['Data'], format='%Y%m%d')
-
-        maxPu = master['Progress_match'].max()
-        st.write(":blue[Numero di partite giocate da settembre 2025: ]", maxPu)
-
-        groupby = master.groupby(['Giocatori'])
-        out = pd.DataFrame({'PunteggioTotale': groupby['Punteggio'].sum(), })
-        out.sort_values(by=["PunteggioTotale"], ascending=True)
-
-        st.subheader(':rainbow[Classifica dei punti cumulati finora] :sunglasses:')
-        st.bar_chart(data=out)
-
-        groupby = master.groupby(['Giocatori'])
-        out = pd.DataFrame({'TOT_Win': groupby['Winner'].sum(), })
-        out.sort_values(by=["TOT_Win"], ascending=False)
-
-        st.subheader(':green[Chi ha vinto più partite?]')
-        st.bar_chart(data=out, color="#1b4d3e")
-
-        groupby = master.groupby(['Giocatori'])
-        out = pd.DataFrame({'TOT_Los': groupby['Loser'].sum(), })
-        out.sort_values(by=["TOT_Los"], ascending=True)
-
-        st.subheader(':red[Chi ha perso più partite?]')
-        st.bar_chart(data=out, color=["#fe6f5e"])
-
-        groupby = master.groupby(['Giocatori'])
-        out = pd.DataFrame({'Numero partite': groupby['Giocatori'].count(), })
-        out.sort_values(by=["Numero partite"], ascending=True)
-
-        st.subheader(":blue[Chi ha giocato più partite?]")
-        st.bar_chart(data=out, color="#0d98ba")
-
-    with tab3:
-        player= st.selectbox('Scegli il giocatore', options=label)
-
-        s = directory + "Briscolaccia_Sombreno_25.csv"
-        csv = pd.read_csv(s, sep=";", header=0, index_col=False)
-        master = pd.DataFrame(csv)
-        master['Data'] = pd.to_datetime(master['Data'], format='%Y%m%d')
-        out = master.loc[master['Giocatori'] == player]
-
-        out['Cumulati'] = master.groupby(['Giocatori'])['Punteggio'].cumsum()
-        #master = master.rename(columns={'Data': 'index'}).set_index('index')
-
-        st.subheader(":rainbow[Quale è il percorso del nostro eroe?]")
-        master.Progress_match: int = 0
-        st.line_chart(out, x="Progress_match", y="Cumulati", x_label="Partite", y_label="Andamento punti cumulati")
-        #st.bar_chart(data=out, color="#ffc1cc")
 main()

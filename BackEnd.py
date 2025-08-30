@@ -4,12 +4,11 @@ import os
 import utils as utils
 from datetime import datetime
 
+now = datetime.now().strftime("%Y%m%d")
+label = C.label
+
 def aggiorna():
-    now = datetime.now().strftime("%Y%m%d")
 
-    label = C.label
-
-    #######################
     directory = C.directory
     directory_ark = C.directory_ark
 

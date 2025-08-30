@@ -1,15 +1,18 @@
 pandas
-openai
+#openai
 openpyxl
 transformers
-scikit-learn
-numpy
-nltk
-tiktoken
+#scikit-learn
+#numpy
+#nltk
+#tiktoken
 python-decouple
 fastapi[all]
 streamlit
 streamlit-option-menu
-seaborn
+#seaborn
+#plotly
+streamlit_extras
+
 
 
